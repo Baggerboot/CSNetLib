@@ -61,6 +61,7 @@ namespace CSNetLib
 			stream = Client.GetStream();
 			NetClient.Log("Connection established.");
 			ListenThread = new Thread(new ThreadStart(Listen));
+			ListenThread.Name = "CSNetLibClient Network Listener";
 			ListenThread.Start();
 		}
 		internal void Listen()
