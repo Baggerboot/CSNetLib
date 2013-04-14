@@ -16,6 +16,7 @@ namespace CSNetLib
 		private NetworkStream stream;
 		private Thread ListenThread;
 		private NetClient NetClient;
+		private List<byte> buffer = new List<byte>();
 
 		internal ClientListener(NetClient client)
 		{
@@ -41,11 +42,14 @@ namespace CSNetLib
 
 		internal string ReadLine()
 		{
-			List<byte> buffer = new List<byte>();
-			
+			buffer.Clear();
 			int i;
 			while ((i = stream.ReadByte()) != 10 && i != -1)
 				buffer.Add((byte)i);
+
+			if (buffer.Count == 0) {
+				return null;
+			}
 
 			return new string(System.Text.Encoding.ASCII.GetChars(buffer.ToArray()));
 		}
@@ -69,6 +73,11 @@ namespace CSNetLib
 			while (Client.Connected) {
 				try {
 					string line = ReadLine();
+					if (line == null) {
+						NetClient.Log("Connection closed.");
+						NetClient.Disconnect();
+						return;
+					}
 					NetClient.ProcessData(line);
 				} catch (System.IO.IOException) {
 					NetClient.Log("Connection closed.");
