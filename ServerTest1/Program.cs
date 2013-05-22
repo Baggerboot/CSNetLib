@@ -16,21 +16,21 @@ namespace ServerTest1
 
 		private Dictionary<int, string> Nicks = new Dictionary<int, string>();
 
-		public Program(string host)
+		public Program(string host, int port)
 		{
 			Server = new NetServer();
 			Server.OnServerLogEvent += OnLogEvent;
 			Server.OnClientInputEvent += OnClientInput;
 			Server.OnClientConnection += OnClientConnection;
 			Server.OnClientDisconnect += OnClientDisconnect;
-			Server.StartListen(host, 9001);
+			Server.StartListen(host, port);
 			Console.ReadKey();
 		}
 		static void Main(string[] args)
 		{
 			if (args.Length > 0)
 			{
-				new Program(args[0]);
+				new Program(args[0], int.Parse(args[1]));
 			}
 			else
 			{
@@ -39,18 +39,19 @@ namespace ServerTest1
 				if (input.Equals(""))
 				{
 					Console.WriteLine("Using default IP address.");
-					new Program("192.168.178.26");
+					new Program("192.168.178.26", 9001);
 				}
 				else if (input.Equals("auto"))
 				{
 					string ip = LocalIPAddress();
 					Console.WriteLine("Auto-detected IP address: " + ip);
-					new Program(ip);
+					new Program(ip, 9001);
 				}
 				else
 				{
 					Console.WriteLine("Using manually configured IP address.");
-					new Program(input);
+					Console.WriteLine("Please enter the port you want to listen on.");
+					new Program(input, int.Parse(Console.ReadLine()));
 				}
 			}
 		}

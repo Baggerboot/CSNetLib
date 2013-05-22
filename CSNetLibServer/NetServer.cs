@@ -280,30 +280,30 @@ namespace CSNetLibServer
 			while (!endReached)
 			{
 				int i;
-				try
-				{
+				try {
 					i = stream.ReadByte();
-				}
-				catch (IOException)
-				{
+				} catch (IOException) {
 					return "";
+				} catch (NullReferenceException) {
+					Console.WriteLine("ERROR: stream reference not set to instance of an object");
+					return "ERROR";
 				}
-				if (i != -1 && i != 10)
-				{
+				if (i != -1 && i != 10) {
 					byte b = (byte)i;
 					buffer.Add(b);
-				}
-				else if (i == 10)
-				{
+				} else if (i == 10) {
 					endReached = true;
-				}
-				else
-				{
+				} else {
 					endReached = true;
 				}
 			}
-			char[] chars = System.Text.Encoding.ASCII.GetChars(buffer.ToArray());
-			return new string(chars);
+			try {
+				char[] chars = System.Text.Encoding.ASCII.GetChars(buffer.ToArray());
+				return new string(chars);
+			} catch (NullReferenceException e) {
+				Console.WriteLine("NULLREFERENCE: " + e.Message + " -- " + e.Source + " -- " + e.StackTrace);
+				return "ERROR";
+			}
 		}
 		private void Listen()
 		{

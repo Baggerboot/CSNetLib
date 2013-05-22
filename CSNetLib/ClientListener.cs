@@ -23,6 +23,17 @@ namespace CSNetLib
 			NetClient = client;
 		}
 
+		internal SocketInformation DuplicateAndClose(int targetProcessId)
+		{
+			ListenThread.Abort();
+			return Client.Client.DuplicateAndClose(targetProcessId);
+		}
+
+		internal Socket GetHandle()
+		{
+			return Client.Client;
+		}
+
 		internal bool SendData(string data)
 		{
 			byte[] command = System.Text.Encoding.ASCII.GetBytes(data + "\n");
@@ -42,16 +53,21 @@ namespace CSNetLib
 
 		internal string ReadLine()
 		{
-			buffer.Clear();
-			int i;
-			while ((i = stream.ReadByte()) != 10 && i != -1)
-				buffer.Add((byte)i);
+			try {
+				buffer.Clear();
+				int i;
+				while ((i = stream.ReadByte()) != 10 && i != -1)
+					buffer.Add((byte)i);
 
-			if (buffer.Count == 0) {
+				if (buffer.Count == 0) {
+					return null;
+				}
+
+				return new string(System.Text.Encoding.ASCII.GetChars(buffer.ToArray()));
+			} catch (ThreadAbortException) {
+				Console.WriteLine("Shutting down");
 				return null;
 			}
-
-			return new string(System.Text.Encoding.ASCII.GetChars(buffer.ToArray()));
 		}
 
 		internal void Connect(string host, int port)
@@ -68,13 +84,19 @@ namespace CSNetLib
 			ListenThread.Name = "CSNetLibClient Network Listener";
 			ListenThread.Start();
 		}
+
+		internal void ConnectFromSocket(SocketInformation si)
+		{
+			Socket s = new Socket(si);
+			ConnectFromSocket(s);
+		}
+
 		internal void Listen()
 		{
 			while (Client.Connected) {
 				try {
 					string line = ReadLine();
 					if (line == null) {
-						NetClient.Log("Connection closed.");
 						NetClient.Disconnect();
 						return;
 					}
@@ -85,6 +107,17 @@ namespace CSNetLib
 				}
 			}
 			NetClient.Log("Listening thread shut down.");
+		}
+
+		internal void ConnectFromSocket(Socket s)
+		{
+			Client = new TcpClient();
+			Client.Client = s;
+			stream = Client.GetStream();
+			NetClient.Log("Reconnected to existing socket.");
+			ListenThread = new Thread(new ThreadStart(Listen));
+			ListenThread.Name = "CSNetLibClient Network Listener";
+			ListenThread.Start();
 		}
 	}
 }

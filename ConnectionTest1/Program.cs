@@ -23,7 +23,8 @@ namespace ConnectionTest1
 			InputListener = new Thread(new ThreadStart(HandleInput));
 			Console.WriteLine("Please enter the IP address or URL of the server you want to connect to.");
 			string host = Console.ReadLine();
-			int port = 9001;
+			Console.WriteLine("Please enter the port number of the server you want to connect to.");
+			int port = int.Parse(Console.ReadLine());
 			Client.Connect(host, port);
 			InputListener.Start();
 		}

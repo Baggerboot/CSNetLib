@@ -22,6 +22,15 @@ namespace CSNetLib
 
 		private ClientListener Listener;
 
+		public SocketInformation DuplicateAndClose(int targetProcessId)
+		{
+			return Listener.DuplicateAndClose(targetProcessId);
+		}
+
+		public Socket GetHandle()
+		{
+			return Listener.GetHandle();
+		}
 
 		public NetClient()
 		{
@@ -35,6 +44,16 @@ namespace CSNetLib
 			} catch (SocketException e) {
 				throw e;
 			}
+		}
+
+		public void ConnectFromSocket(Socket s)
+		{
+			Listener.ConnectFromSocket(s);
+		}
+
+		public void ConnectFromSocket(SocketInformation si)
+		{
+			Listener.ConnectFromSocket(si);
 		}
 
 		public void Disconnect()
