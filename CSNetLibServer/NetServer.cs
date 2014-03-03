@@ -285,8 +285,7 @@ namespace CSNetLibServer
 				} catch (IOException) {
 					return "";
 				} catch (NullReferenceException) {
-					Console.WriteLine("ERROR: stream reference not set to instance of an object");
-					return "ERROR";
+					return "";
 				}
 				if (i != -1 && i != 10) {
 					byte b = (byte)i;

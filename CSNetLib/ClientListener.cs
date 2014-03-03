@@ -5,9 +5,12 @@ using System.Text;
 
 using System.Threading;
 using System.Net.Sockets;
+using System.Net;
 
 namespace CSNetLib
 {
+	public delegate void OnLocalPortKnownEvent(int port);
+
 	internal class ClientListener
 	{
 		internal bool Connected { get { return Client.Connected; } }
@@ -17,6 +20,8 @@ namespace CSNetLib
 		private Thread ListenThread;
 		private NetClient NetClient;
 		private List<byte> buffer = new List<byte>();
+
+		internal event OnLocalPortKnownEvent OnLocalPortKnown;
 
 		internal ClientListener(NetClient client)
 		{
@@ -29,14 +34,14 @@ namespace CSNetLib
 			return Client.Client.DuplicateAndClose(targetProcessId);
 		}
 
-		internal Socket GetHandle()
+		internal Socket GetSocket()
 		{
 			return Client.Client;
 		}
 
 		internal bool SendData(string data)
 		{
-			byte[] command = System.Text.Encoding.ASCII.GetBytes(data + "\n");
+			byte[] command = System.Text.Encoding.UTF8.GetBytes(data + "\n");
 			try {
 				stream.Write(command, 0, command.Length);
 			} catch (Exception) {
@@ -63,7 +68,7 @@ namespace CSNetLib
 					return null;
 				}
 
-				return new string(System.Text.Encoding.ASCII.GetChars(buffer.ToArray()));
+				return new string(System.Text.Encoding.UTF8.GetChars(buffer.ToArray()));
 			} catch (ThreadAbortException) {
 				Console.WriteLine("Shutting down");
 				return null;
@@ -78,8 +83,17 @@ namespace CSNetLib
 			} catch (SocketException e) {
 				throw e;
 			}
+			if (OnLocalPortKnown != null) {
+				OnLocalPortKnown(((IPEndPoint)Client.Client.LocalEndPoint).Port);
+			} else {
+				NetClient.Log("No subscriptions to OnLocalPortKnown");
+			}
+
+			Action<SocketInformation> act = ConnectFromSocket;
+
 			stream = Client.GetStream();
-			NetClient.Log("Connection established.");
+
+			NetClient.Log("Network connection opened");
 			ListenThread = new Thread(new ThreadStart(Listen));
 			ListenThread.Name = "CSNetLibClient Network Listener";
 			ListenThread.Start();
@@ -102,11 +116,15 @@ namespace CSNetLib
 					}
 					NetClient.ProcessData(line);
 				} catch (System.IO.IOException) {
-					NetClient.Log("Connection closed.");
-					NetClient.Disconnect();
+					NetClient.Log("Network connection closed");
+					if (Connected) {
+						NetClient.Disconnect();
+					} else {
+						NetClient.DisconnectWithoutEvent();
+					}
 				}
 			}
-			NetClient.Log("Listening thread shut down.");
+			NetClient.Log("Listening thread shut down");
 		}
 
 		internal void ConnectFromSocket(Socket s)
@@ -114,10 +132,12 @@ namespace CSNetLib
 			Client = new TcpClient();
 			Client.Client = s;
 			stream = Client.GetStream();
-			NetClient.Log("Reconnected to existing socket.");
+			NetClient.Log("Reconnected to existing socket");
 			ListenThread = new Thread(new ThreadStart(Listen));
 			ListenThread.Name = "CSNetLibClient Network Listener";
 			ListenThread.Start();
 		}
+
+		
 	}
 }

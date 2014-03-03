@@ -17,9 +17,19 @@ namespace CSNetLib
 		public event NetworkDataAvailableEvent OnNetworkDataAvailabe;
 		public event LogEvent OnLogEvent;
 		public event ConnectionLostEvent OnDisconnect;
+		public event OnLocalPortKnownEvent OnLocalPortKnown
+		{
+			add
+			{
+				Listener.OnLocalPortKnown += value;
+			}
+			remove
+			{
+				Listener.OnLocalPortKnown -= value;
+			}
+		}
 
 		public bool Connected { get { return Listener.Connected; } }
-
 		private ClientListener Listener;
 
 		public SocketInformation DuplicateAndClose(int targetProcessId)
@@ -27,9 +37,9 @@ namespace CSNetLib
 			return Listener.DuplicateAndClose(targetProcessId);
 		}
 
-		public Socket GetHandle()
+		public Socket GetSocket()
 		{
-			return Listener.GetHandle();
+			return Listener.GetSocket();
 		}
 
 		public NetClient()
@@ -61,6 +71,10 @@ namespace CSNetLib
 			Listener.Disconnect();
 			if (OnDisconnect != null) OnDisconnect();
 		}
+		public void DisconnectWithoutEvent()
+		{
+			Listener.Disconnect();
+		}
 
 		internal void ProcessData(string data)
 		{
@@ -76,5 +90,7 @@ namespace CSNetLib
 		{
 			return Listener.SendData(data);
 		}
+
+		
 	}
 }
